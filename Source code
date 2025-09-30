@@ -2,116 +2,126 @@ import java.util.*;
 
 public class Tabular {
 
-    
-    public static void showMatrix(char[][] matrix, int[] key) {
-        System.out.print("Key Order : ");
-        for (int k : key) {
-            System.out.print(k + " ");
-        }
-        System.out.println("\n------------------");
+    // Show the matrix with key order
+    public static void showMatrix(char[][] matrix, int[] key) {  
+        System.out.print("Key Order : ");  
+        for (int k : key) {  
+            System.out.print(k + " ");  
+        }  
+        System.out.println("\n------------------");  
 
-        for (int r = 0; r < matrix.length; r++) {
-            for (int c = 0; c < matrix[r].length; c++) {
-                System.out.print((matrix[r][c] == 0 ? "X" : matrix[r][c]) + " ");
-            }
-            System.out.println();
-        }
-        System.out.println("------------------");
-    }
+        for (int r = 0; r < matrix.length; r++) {  
+            for (int c = 0; c < matrix[r].length; c++) {  
+                System.out.print((matrix[r][c] == 0 ? "X" : matrix[r][c]) + " ");  
+            }  
+            System.out.println();  
+        }  
+        System.out.println("------------------");  
+    }  
 
-    
-    public static String doEncrypt(String text, int[] key) {
-        int cols = key.length;
-        int rows = (int) Math.ceil((double) text.length() / cols);
-        char[][] box = new char[rows][cols];
+    // Encrypt plaintext using columnar transposition
+    public static String doEncrypt(String text, int[] key) {  
+        int cols = key.length;  
+        int rows = (int) Math.ceil((double) text.length() / cols);  
+        char[][] box = new char[rows][cols];  
 
-        int idx = 0;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (idx < text.length()) {
-                    box[r][c] = text.charAt(idx++);
-                } else {
-                    box[r][c] = 'X';
-                }
-            }
-        }
+        int idx = 0;  
+        for (int r = 0; r < rows; r++) {  
+            for (int c = 0; c < cols; c++) {  
+                if (idx < text.length()) {  
+                    box[r][c] = text.charAt(idx++);  
+                } else {  
+                    box[r][c] = 'X'; // filler
+                }  
+            }  
+        }  
 
-        System.out.println("\n=== ENCRYPTION ===");
-        System.out.println("Plaintext   : " + text);
-        System.out.println("Columns     : " + cols);
-        System.out.println("Rows        : " + rows);
-        showMatrix(box, key);
+        System.out.println("\n=== ENCRYPTION ===");  
+        System.out.println("Plaintext   : " + text);  
+        System.out.println("Columns     : " + cols);  
+        System.out.println("Rows        : " + rows);  
+        showMatrix(box, key);  
 
-        StringBuilder result = new StringBuilder();
-        for (int k = 1; k <= cols; k++) {
-            int colIndex = -1;
-            for (int i = 0; i < cols; i++) {
-                if (key[i] == k) {
-                    colIndex = i;
-                    break;
-                }
-            }
-            for (int r = 0; r < rows; r++) {
-                result.append(box[r][colIndex]);
-            }
-        }
+        StringBuilder result = new StringBuilder();  
+        for (int k : key) {  
+            int colIndex = (k - 1) % cols; //  flexible mapping
+            for (int r = 0; r < rows; r++) {  
+                result.append(box[r][colIndex]);  
+            }  
+        }  
 
-        System.out.println("Ciphertext  : " + result);
-        return result.toString();
-    }
+        System.out.println("Ciphertext  : " + result);  
+        return result.toString();  
+    }  
 
-   
-    public static String doDecrypt(String cipher, int[] key) {
-        int cols = key.length;
-        int rows = (int) Math.ceil((double) cipher.length() / cols);
-        char[][] box = new char[rows][cols];
+    // Decrypt ciphertext back to plaintext
+    public static String doDecrypt(String cipher, int[] key) {  
+        int cols = key.length;  
+        int rows = (int) Math.ceil((double) cipher.length() / cols);  
+        char[][] box = new char[rows][cols];  
 
-        int chunkSize = rows;
-        String[] columnText = new String[cols];
-        int idx = 0;
-        for (int k = 1; k <= cols; k++) {
-            int colIndex = -1;
-            for (int i = 0; i < cols; i++) {
-                if (key[i] == k) {
-                    colIndex = i;
-                    break;
-                }
-            }
-            columnText[colIndex] = cipher.substring(idx, idx + chunkSize);
-            idx += chunkSize;
-        }
+        //  Fix: if only one column, no transposition needed
+        if (cols == 1) {  
+            System.out.println("\n=== DECRYPTION ===");  
+            System.out.println("Ciphertext  : " + cipher);  
+            System.out.println("Plaintext   : " + cipher.replace("X", ""));  
+            return cipher.replace("X", "");  
+        }  
 
-        System.out.println("\n=== DECRYPTION ===");
-        System.out.println("Ciphertext  : " + cipher);
-        System.out.println("Splitting   : " + Arrays.toString(columnText));
+        int chunkSize = rows;  
+        String[] columnText = new String[cols];  
+        int idx = 0;  
 
-        for (int c = 0; c < cols; c++) {
-            for (int r = 0; r < rows; r++) {
-                box[r][c] = columnText[c].charAt(r);
-            }
-        }
+        for (int k : key) {  
+            int colIndex = (k - 1) % cols; //  flexible mapping
+            columnText[colIndex] = cipher.substring(idx, idx + chunkSize);  
+            idx += chunkSize;  
+        }  
 
-        showMatrix(box, key);
+        System.out.println("\n=== DECRYPTION ===");  
+        System.out.println("Ciphertext  : " + cipher);  
+        System.out.println("Splitting   : " + Arrays.toString(columnText));  
 
-        StringBuilder plain = new StringBuilder();
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                plain.append(box[r][c]);
-            }
-        }
+        for (int c = 0; c < cols; c++) {  
+            for (int r = 0; r < rows; r++) {  
+                box[r][c] = columnText[c].charAt(r);  
+            }  
+        }  
 
-        String output = plain.toString().replace("X", "");
-        System.out.println("Plaintext   : " + output);
-        return output;
-    }
+        showMatrix(box, key);  
 
+        StringBuilder plain = new StringBuilder();  
+        for (int r = 0; r < rows; r++) {  
+            for (int c = 0; c < cols; c++) {  
+                plain.append(box[r][c]);  
+            }  
+        }  
+
+        String output = plain.toString().replace("X", "");  
+        System.out.println("Plaintext   : " + output);  
+        return output;  
+    }  
+
+    // Main program
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         String choice;
 
         do {
-            System.out.print("\nEnter a message: ");
-            String plain = sc.nextLine().replaceAll("\\s+", "").toUpperCase();
+            String plain;
+
+            // Loop until valid message (letters + spaces only)
+            while (true) {
+                System.out.print("\nEnter a message (letters only, no symbols): ");
+                String input = sc.nextLine();
+
+                if (input.matches("^[A-Za-z ]+$")) {  // allow letters + spaces
+                    plain = input.replaceAll("\\s+", "").toUpperCase(); // remove spaces, make uppercase
+                    break; // valid, exit loop
+                } else {
+                    System.out.println(" Invalid input! Symbols or special characters are not allowed.");
+                }
+            }
 
             System.out.print("Enter key ex. 31245: ");
             String keyIn = sc.nextLine();
@@ -121,13 +131,12 @@ public class Tabular {
             }
 
             String encrypted = doEncrypt(plain, key);
-            doDecrypt(encrypted, key);
 
-            System.out.print("\nDo you want to try again? (y/N): ");
-            choice = sc.nextLine().trim().toLowerCase();
-        } while (choice.equals("y"));
+            // Ask if user wants to decrypt
+            System.out.print("\nDo you want to decrypt? (y/N): ");
+            String decryptChoice = sc.nextLine().trim().toLowerCase();
+            if (decryptChoice.equals("y")) {
+                doDecrypt(encrypted, key);
+            }
 
-        System.out.println("Sayonara!");
-        sc.close();
-    }
-}
+    
